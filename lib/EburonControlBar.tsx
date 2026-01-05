@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { useLocalParticipant, useRoomContext } from '@livekit/components-react';
 import { Track, type ScreenShareCaptureOptions, type AudioCaptureOptions } from 'livekit-client';
 import toast from 'react-hot-toast';
@@ -174,7 +175,6 @@ interface EburonControlBarProps {
   onChatToggle?: () => void;
   onParticipantsToggle?: () => void;
   onAgentToggle?: () => void;
-  onSettingsToggle?: () => void;
 
 
   onTranscriptionToggle?: () => void;
@@ -182,7 +182,6 @@ interface EburonControlBarProps {
   isChatOpen?: boolean;
   isParticipantsOpen?: boolean;
   isAgentOpen?: boolean;
-  isSettingsOpen?: boolean;
 
 
   isTranscriptionOpen?: boolean;
@@ -196,7 +195,6 @@ export function EburonControlBar({
   onChatToggle,
   onParticipantsToggle,
   onAgentToggle,
-  onSettingsToggle,
 
 
   onTranscriptionToggle,
@@ -204,7 +202,6 @@ export function EburonControlBar({
   isChatOpen,
   isParticipantsOpen,
   isAgentOpen,
-  isSettingsOpen,
 
 
   isTranscriptionOpen,
@@ -213,6 +210,7 @@ export function EburonControlBar({
   roomState,
   userId,
 }: EburonControlBarProps) {
+  const router = useRouter();
   const room = useRoomContext();
   const { localParticipant } = useLocalParticipant();
   
@@ -231,6 +229,10 @@ export function EburonControlBar({
   const screenShareMenuRef = React.useRef<HTMLDivElement | null>(null);
   const micMenuRef = React.useRef<HTMLDivElement | null>(null);
   const speakerMenuRef = React.useRef<HTMLDivElement | null>(null);
+
+  const navigateToSettings = () => {
+    router.push('/settings');
+  };
 
   // Sync state with actual track status
   React.useEffect(() => {
@@ -517,8 +519,7 @@ export function EburonControlBar({
   const isSidebarOpen = Boolean(
     isChatOpen || 
     isParticipantsOpen || 
-    isAgentOpen || 
-    isSettingsOpen
+    isAgentOpen
   );
 
   return (
@@ -711,15 +712,13 @@ export function EburonControlBar({
             </button>
           )}
 
-          {onSettingsToggle && (
-            <button
-              className={`${styles.controlButton} ${isSettingsOpen ? styles.controlButtonActive : ''}`}
-              onClick={onSettingsToggle}
-              title="Settings"
-            >
-              <SettingsIcon />
-            </button>
-          )}
+          <button
+            className={styles.controlButton}
+            onClick={navigateToSettings}
+            title="Settings"
+          >
+            <SettingsIcon />
+          </button>
         </div>
 
         {/* Right Group: Action Controls */}
@@ -849,18 +848,16 @@ export function EburonControlBar({
               <span className={styles.mobileGridLabel}>{isAppMuted ? 'Unmute' : 'Mute App'}</span>
             </button>
 
-            {onSettingsToggle && (
-              <button 
-                className={`${styles.mobileGridItem} ${isSettingsOpen ? styles.mobileGridItemActive : ''}`}
-                onClick={() => {
-                  onSettingsToggle();
-                  setIsMobileMenuOpen(false);
-                }}
-              >
-                <div className={styles.mobileGridIcon}><SettingsIcon /></div>
-                <span className={styles.mobileGridLabel}>Settings</span>
-              </button>
-            )}
+            <button 
+              className={styles.mobileGridItem}
+              onClick={() => {
+                navigateToSettings();
+                setIsMobileMenuOpen(false);
+              }}
+            >
+              <div className={styles.mobileGridIcon}><SettingsIcon /></div>
+              <span className={styles.mobileGridLabel}>Settings</span>
+            </button>
 
             <button 
               className={styles.mobileGridItem}

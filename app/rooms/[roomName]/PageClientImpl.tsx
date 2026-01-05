@@ -72,7 +72,7 @@ const ChevronLeftIcon = () => (
   </svg>
 );
 
-type SidebarPanel = 'participants' | 'agent' | 'chat' | 'settings';
+type SidebarPanel = 'participants' | 'agent' | 'chat';
 
 function VideoGrid({ allowedParticipantIds }: { allowedParticipantIds: Set<string> }) {
   const layoutContext = useLayoutContext();
@@ -167,132 +167,6 @@ function VideoGrid({ allowedParticipantIds }: { allowedParticipantIds: Set<strin
     <FocusLayoutContainer className={roomStyles.focusLayoutContainer}>
       <FocusLayout trackRef={activeFocusTrack} />
     </FocusLayoutContainer>
-  );
-}
-
-function SettingsPanel({
-  voiceFocusEnabled,
-  onVoiceFocusChange,
-  vadEnabled,
-  onVadChange,
-  noiseSuppressionEnabled,
-  onNoiseSuppressionChange,
-  echoCancellationEnabled,
-  onEchoCancellationChange,
-  autoGainEnabled,
-  onAutoGainChange,
-}: {
-  voiceFocusEnabled: boolean;
-  onVoiceFocusChange: (enabled: boolean) => void;
-  vadEnabled: boolean;
-  onVadChange: (enabled: boolean) => void;
-  noiseSuppressionEnabled: boolean;
-  onNoiseSuppressionChange: (enabled: boolean) => void;
-  echoCancellationEnabled: boolean;
-  onEchoCancellationChange: (enabled: boolean) => void;
-  autoGainEnabled: boolean;
-  onAutoGainChange: (enabled: boolean) => void;
-}) {
-  return (
-    <div className={roomStyles.sidebarPanel}>
-      <div className={roomStyles.sidebarHeader}>
-        <div className={roomStyles.sidebarHeaderText}>
-          <h3>Audio Settings</h3>
-          <span className={roomStyles.sidebarHeaderMeta}>Configure audio processing</span>
-        </div>
-      </div>
-      <div className={roomStyles.sidebarBody}>
-        <div className={roomStyles.sidebarCard}>
-          <div className={roomStyles.sidebarCardText}>
-            <span className={roomStyles.sidebarCardLabel}>Voice Focus</span>
-            <span className={roomStyles.sidebarCardHint}>Isolate your voice from background noise.</span>
-          </div>
-          <label className={roomStyles.sidebarSwitch}>
-            <input
-              type="checkbox"
-              checked={voiceFocusEnabled}
-              onChange={(e) => onVoiceFocusChange(e.target.checked)}
-              aria-label="Voice Focus"
-            />
-            <span className={roomStyles.sidebarSwitchTrack}>
-              <span className={roomStyles.sidebarSwitchThumb} />
-            </span>
-          </label>
-        </div>
-
-        <div className={roomStyles.sidebarCard}>
-          <div className={roomStyles.sidebarCardText}>
-            <span className={roomStyles.sidebarCardLabel}>Voice Detection</span>
-            <span className={roomStyles.sidebarCardHint}>Auto-mute when not speaking.</span>
-          </div>
-          <label className={roomStyles.sidebarSwitch}>
-            <input
-              type="checkbox"
-              checked={vadEnabled}
-              onChange={(e) => onVadChange(e.target.checked)}
-              aria-label="Voice Activity Detection"
-            />
-            <span className={roomStyles.sidebarSwitchTrack}>
-              <span className={roomStyles.sidebarSwitchThumb} />
-            </span>
-          </label>
-        </div>
-
-        <div className={roomStyles.sidebarCard}>
-          <div className={roomStyles.sidebarCardText}>
-            <span className={roomStyles.sidebarCardLabel}>Noise Suppression</span>
-            <span className={roomStyles.sidebarCardHint}>Reduce background noise.</span>
-          </div>
-          <label className={roomStyles.sidebarSwitch}>
-            <input
-              type="checkbox"
-              checked={noiseSuppressionEnabled}
-              onChange={(e) => onNoiseSuppressionChange(e.target.checked)}
-              aria-label="Noise Suppression"
-            />
-            <span className={roomStyles.sidebarSwitchTrack}>
-              <span className={roomStyles.sidebarSwitchThumb} />
-            </span>
-          </label>
-        </div>
-
-        <div className={roomStyles.sidebarCard}>
-          <div className={roomStyles.sidebarCardText}>
-            <span className={roomStyles.sidebarCardLabel}>Echo Cancellation</span>
-            <span className={roomStyles.sidebarCardHint}>Prevent audio feedback.</span>
-          </div>
-          <label className={roomStyles.sidebarSwitch}>
-            <input
-              type="checkbox"
-              checked={echoCancellationEnabled}
-              onChange={(e) => onEchoCancellationChange(e.target.checked)}
-              aria-label="Echo Cancellation"
-            />
-            <span className={roomStyles.sidebarSwitchTrack}>
-              <span className={roomStyles.sidebarSwitchThumb} />
-            </span>
-          </label>
-        </div>
-
-        <div className={roomStyles.sidebarCard}>
-          <div className={roomStyles.sidebarCardText}>
-            <span className={roomStyles.sidebarCardLabel}>Auto Gain Control</span>
-            <span className={roomStyles.sidebarCardHint}>Auto-adjust microphone volume.</span>
-          </div>
-          <label className={roomStyles.sidebarSwitch}>
-            <input
-              type="checkbox"
-              checked={autoGainEnabled}
-              onChange={(e) => onAutoGainChange(e.target.checked)}
-              aria-label="Auto Gain Control"
-            />
-            <span className={roomStyles.sidebarSwitchTrack}>
-              <span className={roomStyles.sidebarSwitchThumb} />
-            </span>
-          </label>
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -767,21 +641,6 @@ function VideoConferenceComponent(props: {
         );
       case 'chat':
         return <ChatPanel />;
-      case 'settings':
-        return (
-          <SettingsPanel
-            voiceFocusEnabled={voiceFocusEnabled}
-            onVoiceFocusChange={setVoiceFocusEnabled}
-            vadEnabled={vadEnabled}
-            onVadChange={setVadEnabled}
-            noiseSuppressionEnabled={noiseSuppressionEnabled}
-            onNoiseSuppressionChange={setNoiseSuppressionEnabled}
-            echoCancellationEnabled={echoCancellationEnabled}
-            onEchoCancellationChange={setEchoCancellationEnabled}
-            autoGainEnabled={autoGainEnabled}
-            onAutoGainChange={setAutoGainEnabled}
-          />
-        );
       default:
         return null;
     }
@@ -880,14 +739,12 @@ function VideoConferenceComponent(props: {
             onParticipantsToggle={() => handleSidebarPanelToggle('participants')}
             onAgentToggle={() => handleSidebarPanelToggle('agent')}
             onChatToggle={() => handleSidebarPanelToggle('chat')}
-            onSettingsToggle={() => handleSidebarPanelToggle('settings')}
 
 
             onTranscriptionToggle={handleTranscriptionToggle}
             isParticipantsOpen={!sidebarCollapsed && activeSidebarPanel === 'participants'}
             isAgentOpen={!sidebarCollapsed && activeSidebarPanel === 'agent'}
             isChatOpen={!sidebarCollapsed && activeSidebarPanel === 'chat'}
-            isSettingsOpen={!sidebarCollapsed && activeSidebarPanel === 'settings'}
 
 
             isTranscriptionOpen={isTranscriptionEnabled}
