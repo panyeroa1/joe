@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from '@/styles/Settings.module.css';
 
@@ -51,32 +51,30 @@ const AccessibilityIcon = () => (
   </svg>
 );
 
+// Default settings configuration
+const defaultSettings = {
+  voiceFocusEnabled: true,
+  noiseSuppressionEnabled: true,
+  echoCancellationEnabled: true,
+  autoGainEnabled: true,
+  mirrorVideo: true,
+  hdVideo: false,
+  virtualBackground: 'none',
+  theme: 'dark' as 'dark' | 'light' | 'system',
+  showCaptions: true,
+  soundNotifications: true,
+  chatNotifications: true,
+  participantJoinNotifications: true,
+  reducedMotion: false,
+  highContrast: false,
+};
+
+type Settings = typeof defaultSettings;
+
 export default function SettingsPage() {
   const router = useRouter();
-
-  // Audio settings
-  const [voiceFocusEnabled, setVoiceFocusEnabled] = useState(true);
-  const [noiseSuppressionEnabled, setNoiseSuppressionEnabled] = useState(true);
-  const [echoCancellationEnabled, setEchoCancellationEnabled] = useState(true);
-  const [autoGainEnabled, setAutoGainEnabled] = useState(true);
-
-  // Video settings
-  const [mirrorVideo, setMirrorVideo] = useState(true);
-  const [hdVideo, setHdVideo] = useState(false);
-  const [virtualBackground, setVirtualBackground] = useState('none');
-
-  // Display settings
-  const [theme, setTheme] = useState<'dark' | 'light' | 'system'>('dark');
-  const [showCaptions, setShowCaptions] = useState(true);
-
-  // Notification settings
-  const [soundNotifications, setSoundNotifications] = useState(true);
-  const [chatNotifications, setChatNotifications] = useState(true);
-  const [participantJoinNotifications, setParticipantJoinNotifications] = useState(true);
-
-  // Accessibility settings
-  const [reducedMotion, setReducedMotion] = useState(false);
-  const [highContrast, setHighContrast] = useState(false);
+  const [settings, setSettings] = useState<Settings>(defaultSettings);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load settings from localStorage on mount
   useEffect(() => {
@@ -84,61 +82,40 @@ export default function SettingsPage() {
     if (savedSettings) {
       try {
         const parsed = JSON.parse(savedSettings);
-        if (parsed.voiceFocusEnabled !== undefined) setVoiceFocusEnabled(parsed.voiceFocusEnabled);
-        if (parsed.noiseSuppressionEnabled !== undefined) setNoiseSuppressionEnabled(parsed.noiseSuppressionEnabled);
-        if (parsed.echoCancellationEnabled !== undefined) setEchoCancellationEnabled(parsed.echoCancellationEnabled);
-        if (parsed.autoGainEnabled !== undefined) setAutoGainEnabled(parsed.autoGainEnabled);
-        if (parsed.mirrorVideo !== undefined) setMirrorVideo(parsed.mirrorVideo);
-        if (parsed.hdVideo !== undefined) setHdVideo(parsed.hdVideo);
-        if (parsed.virtualBackground !== undefined) setVirtualBackground(parsed.virtualBackground);
-        if (parsed.theme !== undefined) setTheme(parsed.theme);
-        if (parsed.showCaptions !== undefined) setShowCaptions(parsed.showCaptions);
-        if (parsed.soundNotifications !== undefined) setSoundNotifications(parsed.soundNotifications);
-        if (parsed.chatNotifications !== undefined) setChatNotifications(parsed.chatNotifications);
-        if (parsed.participantJoinNotifications !== undefined) setParticipantJoinNotifications(parsed.participantJoinNotifications);
-        if (parsed.reducedMotion !== undefined) setReducedMotion(parsed.reducedMotion);
-        if (parsed.highContrast !== undefined) setHighContrast(parsed.highContrast);
+        setSettings((prev) => ({ ...prev, ...parsed }));
       } catch (e) {
         console.error('Failed to parse saved settings', e);
       }
     }
   }, []);
 
-  // Save settings to localStorage whenever they change
+  // Debounced save to localStorage
+  const saveSettings = useCallback((newSettings: Settings) => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    saveTimeoutRef.current = setTimeout(() => {
+      localStorage.setItem('eburon_settings', JSON.stringify(newSettings));
+    }, 300);
+  }, []);
+
+  // Update a single setting
+  const updateSetting = useCallback(<K extends keyof Settings>(key: K, value: Settings[K]) => {
+    setSettings((prev) => {
+      const newSettings = { ...prev, [key]: value };
+      saveSettings(newSettings);
+      return newSettings;
+    });
+  }, [saveSettings]);
+
+  // Cleanup timeout on unmount
   useEffect(() => {
-    const settings = {
-      voiceFocusEnabled,
-      noiseSuppressionEnabled,
-      echoCancellationEnabled,
-      autoGainEnabled,
-      mirrorVideo,
-      hdVideo,
-      virtualBackground,
-      theme,
-      showCaptions,
-      soundNotifications,
-      chatNotifications,
-      participantJoinNotifications,
-      reducedMotion,
-      highContrast,
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
     };
-    localStorage.setItem('eburon_settings', JSON.stringify(settings));
-  }, [
-    voiceFocusEnabled,
-    noiseSuppressionEnabled,
-    echoCancellationEnabled,
-    autoGainEnabled,
-    mirrorVideo,
-    hdVideo,
-    virtualBackground,
-    theme,
-    showCaptions,
-    soundNotifications,
-    chatNotifications,
-    participantJoinNotifications,
-    reducedMotion,
-    highContrast,
-  ]);
+  }, []);
 
   const handleBack = () => {
     router.back();
@@ -175,8 +152,8 @@ export default function SettingsPage() {
               <label className={styles.switch}>
                 <input
                   type="checkbox"
-                  checked={voiceFocusEnabled}
-                  onChange={(e) => setVoiceFocusEnabled(e.target.checked)}
+                  checked={settings.voiceFocusEnabled}
+                  onChange={(e) => updateSetting('voiceFocusEnabled', e.target.checked)}
                 />
                 <span className={styles.switchTrack}>
                   <span className={styles.switchThumb} />
@@ -192,8 +169,8 @@ export default function SettingsPage() {
               <label className={styles.switch}>
                 <input
                   type="checkbox"
-                  checked={noiseSuppressionEnabled}
-                  onChange={(e) => setNoiseSuppressionEnabled(e.target.checked)}
+                  checked={settings.noiseSuppressionEnabled}
+                  onChange={(e) => updateSetting('noiseSuppressionEnabled', e.target.checked)}
                 />
                 <span className={styles.switchTrack}>
                   <span className={styles.switchThumb} />
@@ -209,8 +186,8 @@ export default function SettingsPage() {
               <label className={styles.switch}>
                 <input
                   type="checkbox"
-                  checked={echoCancellationEnabled}
-                  onChange={(e) => setEchoCancellationEnabled(e.target.checked)}
+                  checked={settings.echoCancellationEnabled}
+                  onChange={(e) => updateSetting('echoCancellationEnabled', e.target.checked)}
                 />
                 <span className={styles.switchTrack}>
                   <span className={styles.switchThumb} />
@@ -226,8 +203,8 @@ export default function SettingsPage() {
               <label className={styles.switch}>
                 <input
                   type="checkbox"
-                  checked={autoGainEnabled}
-                  onChange={(e) => setAutoGainEnabled(e.target.checked)}
+                  checked={settings.autoGainEnabled}
+                  onChange={(e) => updateSetting('autoGainEnabled', e.target.checked)}
                 />
                 <span className={styles.switchTrack}>
                   <span className={styles.switchThumb} />
@@ -254,8 +231,8 @@ export default function SettingsPage() {
               <label className={styles.switch}>
                 <input
                   type="checkbox"
-                  checked={mirrorVideo}
-                  onChange={(e) => setMirrorVideo(e.target.checked)}
+                  checked={settings.mirrorVideo}
+                  onChange={(e) => updateSetting('mirrorVideo', e.target.checked)}
                 />
                 <span className={styles.switchTrack}>
                   <span className={styles.switchThumb} />
@@ -271,8 +248,8 @@ export default function SettingsPage() {
               <label className={styles.switch}>
                 <input
                   type="checkbox"
-                  checked={hdVideo}
-                  onChange={(e) => setHdVideo(e.target.checked)}
+                  checked={settings.hdVideo}
+                  onChange={(e) => updateSetting('hdVideo', e.target.checked)}
                 />
                 <span className={styles.switchTrack}>
                   <span className={styles.switchThumb} />
@@ -287,8 +264,8 @@ export default function SettingsPage() {
               </div>
               <select
                 className={styles.select}
-                value={virtualBackground}
-                onChange={(e) => setVirtualBackground(e.target.value)}
+                value={settings.virtualBackground}
+                onChange={(e) => updateSetting('virtualBackground', e.target.value)}
               >
                 <option value="none">None</option>
                 <option value="blur">Blur</option>
@@ -315,8 +292,8 @@ export default function SettingsPage() {
               </div>
               <select
                 className={styles.select}
-                value={theme}
-                onChange={(e) => setTheme(e.target.value as 'dark' | 'light' | 'system')}
+                value={settings.theme}
+                onChange={(e) => updateSetting('theme', e.target.value as 'dark' | 'light' | 'system')}
               >
                 <option value="dark">Dark</option>
                 <option value="light">Light</option>
@@ -332,8 +309,8 @@ export default function SettingsPage() {
               <label className={styles.switch}>
                 <input
                   type="checkbox"
-                  checked={showCaptions}
-                  onChange={(e) => setShowCaptions(e.target.checked)}
+                  checked={settings.showCaptions}
+                  onChange={(e) => updateSetting('showCaptions', e.target.checked)}
                 />
                 <span className={styles.switchTrack}>
                   <span className={styles.switchThumb} />
@@ -360,8 +337,8 @@ export default function SettingsPage() {
               <label className={styles.switch}>
                 <input
                   type="checkbox"
-                  checked={soundNotifications}
-                  onChange={(e) => setSoundNotifications(e.target.checked)}
+                  checked={settings.soundNotifications}
+                  onChange={(e) => updateSetting('soundNotifications', e.target.checked)}
                 />
                 <span className={styles.switchTrack}>
                   <span className={styles.switchThumb} />
@@ -377,8 +354,8 @@ export default function SettingsPage() {
               <label className={styles.switch}>
                 <input
                   type="checkbox"
-                  checked={chatNotifications}
-                  onChange={(e) => setChatNotifications(e.target.checked)}
+                  checked={settings.chatNotifications}
+                  onChange={(e) => updateSetting('chatNotifications', e.target.checked)}
                 />
                 <span className={styles.switchTrack}>
                   <span className={styles.switchThumb} />
@@ -394,8 +371,8 @@ export default function SettingsPage() {
               <label className={styles.switch}>
                 <input
                   type="checkbox"
-                  checked={participantJoinNotifications}
-                  onChange={(e) => setParticipantJoinNotifications(e.target.checked)}
+                  checked={settings.participantJoinNotifications}
+                  onChange={(e) => updateSetting('participantJoinNotifications', e.target.checked)}
                 />
                 <span className={styles.switchTrack}>
                   <span className={styles.switchThumb} />
@@ -422,8 +399,8 @@ export default function SettingsPage() {
               <label className={styles.switch}>
                 <input
                   type="checkbox"
-                  checked={reducedMotion}
-                  onChange={(e) => setReducedMotion(e.target.checked)}
+                  checked={settings.reducedMotion}
+                  onChange={(e) => updateSetting('reducedMotion', e.target.checked)}
                 />
                 <span className={styles.switchTrack}>
                   <span className={styles.switchThumb} />
@@ -439,8 +416,8 @@ export default function SettingsPage() {
               <label className={styles.switch}>
                 <input
                   type="checkbox"
-                  checked={highContrast}
-                  onChange={(e) => setHighContrast(e.target.checked)}
+                  checked={settings.highContrast}
+                  onChange={(e) => updateSetting('highContrast', e.target.checked)}
                 />
                 <span className={styles.switchTrack}>
                   <span className={styles.switchThumb} />
